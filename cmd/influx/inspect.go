@@ -12,17 +12,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Inspect Command
-var inspectCmd = &cobra.Command{
-	Use:   "inspect",
-	Short: "commands for inspecting database file data",
-	Run:   inspectF,
-}
-
-func inspectF(cmd *cobra.Command, args []string) {
-	cmd.Usage()
-}
-
 // InspectReportTSMFlags defines the `report-tsm` Command.
 type InspectReportTSMFlags struct {
 	pattern  string
@@ -35,7 +24,7 @@ type InspectReportTSMFlags struct {
 
 var inspectReportTSMFlags InspectReportTSMFlags
 
-func init() {
+func initInspectReportTSMCommand() *cobra.Command {
 	inspectReportTSMCommand := &cobra.Command{
 		Use:   "report-tsm",
 		Short: "Run TSM report",
@@ -54,8 +43,7 @@ func init() {
 		panic(err)
 	}
 	inspectReportTSMCommand.Flags().StringVarP(&inspectReportTSMFlags.dataDir, "data-dir", "", "", fmt.Sprintf("use provided data directory (defaults to %s).", filepath.Join(dir, "engine/data")))
-
-	inspectCmd.AddCommand(inspectReportTSMCommand)
+	return inspectReportTSMCommand
 }
 
 // inspectReportTSMF runs the report-tsm tool.
