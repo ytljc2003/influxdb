@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/influxdata/influxdb/http/internal/swaggervalidator"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -39,10 +40,14 @@ func NewPlatformHandler(b *APIBackend) *PlatformHandler {
 	assetHandler := NewAssetHandler()
 	assetHandler.Path = b.AssetsPath
 
+	// If swaggerAsset is nil, and if running in development mode,
+	// the middleware will try to check on disk for swagger.yml.
+	swaggerAsset, _ := Asset("swagger.yml")
+
 	return &PlatformHandler{
 		AssetHandler: assetHandler,
 		DocsHandler:  Redoc("/api/v2/swagger.json"),
-		APIHandler:   h,
+		APIHandler:   swaggervalidator.NewMiddleware(b.Logger, h, swaggerAsset),
 	}
 }
 
