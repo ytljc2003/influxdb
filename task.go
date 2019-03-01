@@ -130,14 +130,14 @@ func (t *TaskUpdate) UnmarshalJSON(data []byte) error {
 	jo := struct {
 		Flux   *string `json:"flux,omitempty"`
 		Status *string `json:"status,omitempty"`
-		Name   string  `json:"name,omitempty"`
+		Name   *string `json:"name,omitempty"`
 
 		// Cron is a cron style time schedule that can be used in place of Every.
-		Cron string `json:"cron,omitempty"`
+		Cron *string `json:"cron,omitempty"`
 
 		// Every represents a fixed period to repeat execution.
 		// It gets marshalled from a string duration, i.e.: "10s" is 10 seconds
-		Every flux.Duration `json:"every,omitempty"`
+		Every *flux.Duration `json:"every,omitempty"`
 
 		// Offset represents a delay before execution.
 		// It gets marshalled from a string duration, i.e.: "10s" is 10 seconds
@@ -155,7 +155,9 @@ func (t *TaskUpdate) UnmarshalJSON(data []byte) error {
 	}
 	t.Options.Name = jo.Name
 	t.Options.Cron = jo.Cron
-	t.Options.Every = time.Duration(jo.Every)
+	if jo.Every != nil {
+		*t.Options.Every = time.Duration(*jo.Every)
+	}
 	t.Options.Offset = time.Duration(jo.Offset)
 	t.Options.Concurrency = jo.Concurrency
 	t.Options.Retry = jo.Retry
@@ -170,7 +172,7 @@ func (t TaskUpdate) MarshalJSON() ([]byte, error) {
 	jo := struct {
 		Flux   *string `json:"flux,omitempty"`
 		Status *string `json:"status,omitempty"`
-		Name   string  `json:"name,omitempty"`
+		Name   *string `json:"name,omitempty"`
 
 		// Cron is a cron style time schedule that can be used in place of Every.
 		Cron string `json:"cron,omitempty"`
@@ -187,7 +189,7 @@ func (t TaskUpdate) MarshalJSON() ([]byte, error) {
 
 		Token string `json:"token,omitempty"`
 	}{}
-	jo.Name = t.Options.Name
+	*jo.Name = t.Options.Name
 	jo.Cron = t.Options.Cron
 	jo.Every = flux.Duration(t.Options.Every)
 	jo.Offset = flux.Duration(t.Options.Offset)

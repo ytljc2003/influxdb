@@ -42,11 +42,11 @@ type Options struct {
 
 	// Offset represents a delay before execution.
 	// this can be unmarshaled from json as a string i.e.: "1d" will unmarshal as 1 day
-	Offset time.Duration `json:"offset,omitempty"`
+	Offset *time.Duration `json:"offset,omitempty"`
 
-	Concurrency int64 `json:"concurrency,omitempty"`
+	Concurrency *int64 `json:"concurrency,omitempty"`
 
-	Retry int64 `json:"retry,omitempty"`
+	Retry *int64 `json:"retry,omitempty"`
 }
 
 // Clear clears out all options in the options struct, it us useful if you wish to reuse it.
@@ -54,18 +54,18 @@ func (o *Options) Clear() {
 	o.Name = ""
 	o.Cron = ""
 	o.Every = 0
-	o.Offset = 0
-	o.Concurrency = 0
-	o.Retry = 0
+	o.Offset = nil
+	o.Concurrency = nil
+	o.Retry = nil
 }
 
 func (o *Options) IsZero() bool {
 	return o.Name == "" &&
 		o.Cron == "" &&
 		o.Every == 0 &&
-		o.Offset == 0 &&
-		o.Concurrency == 0 &&
-		o.Retry == 0
+		o.Offset == nil &&
+		o.Concurrency == nil &&
+		o.Retry == nil
 }
 
 // FromScript extracts Options from a Flux script.
@@ -79,8 +79,7 @@ func FromScript(script string) (Options, error) {
 			return opt, nil
 		}
 	}
-
-	opt := Options{Retry: 1, Concurrency: 1}
+	opt := Options{Retry: int64Ptr(1), Concurrency: int64Ptr(1)}
 
 	_, scope, err := flux.Eval(script)
 	if err != nil {
@@ -130,21 +129,21 @@ func FromScript(script string) (Options, error) {
 		if err := checkNature(offsetVal.PolyType().Nature(), semantic.Duration); err != nil {
 			return opt, err
 		}
-		opt.Offset = offsetVal.Duration().Duration()
+		opt.Offset = durationPtr(offsetVal.Duration().Duration())
 	}
 
 	if concurrencyVal, ok := optObject.Get("concurrency"); ok {
 		if err := checkNature(concurrencyVal.PolyType().Nature(), semantic.Int); err != nil {
 			return opt, err
 		}
-		opt.Concurrency = concurrencyVal.Int()
+		opt.Concurrency = int64Ptr(concurrencyVal.Int())
 	}
 
 	if retryVal, ok := optObject.Get("retry"); ok {
 		if err := checkNature(retryVal.PolyType().Nature(), semantic.Int); err != nil {
 			return opt, err
 		}
-		opt.Retry = retryVal.Int()
+		opt.Retry = int64Ptr(retryVal.Int())
 	}
 
 	if err := opt.Validate(); err != nil {
@@ -185,21 +184,23 @@ func (o *Options) Validate() error {
 		}
 	}
 
-	if o.Offset.Truncate(time.Second) != o.Offset {
+	if o.Offset != nil && o.Offset.Truncate(time.Second) != *o.Offset {
 		// For now, allowing negative offset delays. Maybe they're useful for forecasting?
 		errs = append(errs, "offset option must be expressible as whole seconds")
 	}
-
-	if o.Concurrency < 1 {
+	if o.Concurrency != nil{
+	if  *o.Concurrency < 1 {
 		errs = append(errs, "concurrency must be at least 1")
-	} else if o.Concurrency > maxConcurrency {
+	} else if *o.Concurrency > maxConcurrency {
 		errs = append(errs, fmt.Sprintf("concurrency exceeded max of %d", maxConcurrency))
 	}
-
-	if o.Retry < 1 {
-		errs = append(errs, "retry must be at least 1")
-	} else if o.Retry > maxRetry {
-		errs = append(errs, fmt.Sprintf("retry exceeded max of %d", maxRetry))
+}
+	if o.Retry != nil {
+		if *o.Retry < 1 {
+			errs = append(errs, "retry must be at least 1")
+		} else *o.Retry > maxRetry {
+			errs = append(errs, fmt.Sprintf("retry exceeded max of %d", maxRetry))
+		}
 	}
 
 	if len(errs) == 0 {
@@ -215,10 +216,10 @@ func (o *Options) Validate() error {
 // Otherwise, the empty string is returned.
 // The value of the offset option is not considered.
 func (o *Options) EffectiveCronString() string {
-	if o.Cron != "" {
-		return o.Cron
+	if o.Cron != nil && *o.Cron != "" {
+		return *o.Cron
 	}
-	if o.Every > 0 {
+	if o.Every != nil && *o.Every > 0 {
 		return "@every " + o.Every.String()
 	}
 	return ""
@@ -230,4 +231,16 @@ func checkNature(got, exp semantic.Nature) error {
 		return fmt.Errorf("unexpected kind: got %q expected %q", got, exp)
 	}
 	return nil
+}
+
+func strPtr(s string) *string {
+	return &s
+}
+
+func int64Ptr(i int64) *int64 {
+	return &i
+}
+
+func durationPtr(d time.Duration) *time.Duration {
+	return &d
 }
