@@ -42,6 +42,8 @@ interface OwnProps {
   showTemplateControlBar: boolean
   zoomedTimeRange: QueriesModels.TimeRange
   onRenameDashboard: (name: string) => Promise<void>
+  toggleVariableDropdowns: () => void
+  isShowingVariableDropdowns: boolean
   isHidden: boolean
 }
 
@@ -69,6 +71,8 @@ class DashboardHeader extends Component<Props> {
       zoomedTimeRange: {upper: zoomedUpper, lower: zoomedLower},
       isHidden,
       onAddNote,
+      toggleVariableDropdowns,
+      isShowingVariableDropdowns,
     } = this.props
 
     return (
@@ -93,6 +97,15 @@ class DashboardHeader extends Component<Props> {
               upper: zoomedUpper || upper,
               lower: zoomedLower || lower,
             }}
+          />
+          <Button
+            text="Variables"
+            onClick={toggleVariableDropdowns}
+            color={
+              isShowingVariableDropdowns
+                ? ComponentColor.Primary
+                : ComponentColor.Default
+            }
           />
           <Button
             icon={IconFont.ExpandA}

@@ -14,6 +14,7 @@ import VEO from 'src/dashboards/components/VEO'
 import {Overlay} from 'src/clockface'
 import {HoverTimeProvider} from 'src/dashboards/utils/hoverTime'
 import NoteEditorContainer from 'src/dashboards/components/NoteEditorContainer'
+import VariableDropdowns from 'src/dashboards/components/VariableDropdowns'
 
 // Actions
 import * as dashboardActions from 'src/dashboards/actions/v2'
@@ -105,6 +106,7 @@ interface State {
   scrollTop: number
   windowHeight: number
   isShowingVEO: boolean
+  isShowingVariableDropdowns: boolean
 }
 
 @ErrorHandling
@@ -116,6 +118,7 @@ class DashboardPage extends Component<Props, State> {
       scrollTop: 0,
       windowHeight: window.innerHeight,
       isShowingVEO: false,
+      isShowingVariableDropdowns: false,
     }
   }
 
@@ -163,7 +166,7 @@ class DashboardPage extends Component<Props, State> {
       handleChooseAutoRefresh,
       handleClickPresentationButton,
     } = this.props
-    const {isShowingVEO} = this.state
+    const {isShowingVEO, isShowingVariableDropdowns} = this.state
 
     return (
       <Page titleTag={this.pageTitle}>
@@ -182,7 +185,12 @@ class DashboardPage extends Component<Props, State> {
             handleChooseAutoRefresh={handleChooseAutoRefresh}
             handleChooseTimeRange={this.handleChooseTimeRange}
             handleClickPresentationButton={handleClickPresentationButton}
+            toggleVariableDropdowns={this.toggleVariableDropdowns}
+            isShowingVariableDropdowns={isShowingVariableDropdowns}
           />
+          {isShowingVariableDropdowns && (
+            <VariableDropdowns dashboardID={dashboard.id} />
+          )}
           {!!dashboard && (
             <DashboardComponent
               inView={this.inView}
@@ -320,6 +328,12 @@ class DashboardPage extends Component<Props, State> {
 
   private handleWindowResize = (): void => {
     this.setState({windowHeight: window.innerHeight})
+  }
+
+  private toggleVariableDropdowns = (): void => {
+    this.setState({
+      isShowingVariableDropdowns: !this.state.isShowingVariableDropdowns,
+    })
   }
 
   private get pageTitle(): string {
